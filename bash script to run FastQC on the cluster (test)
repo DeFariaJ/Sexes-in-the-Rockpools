@@ -5,7 +5,7 @@
 # Request 8G of RAM
 #$ -l h_vmem=8G
 # The path used for the standard output stream of the job
-#$ -o $HOME/tmp/stdout_of_job
+#$ -o /ebio/abt5_projects/Sex_biased_genes_Phaeophyceae/data/
 # Merge stdout and stderr. The job will create only one output file which
 # contains both the real output and the error messages.
 #$ -j y
@@ -17,7 +17,11 @@
 #$ -m beas
 
 
-input_dir=$(q-src /ebio/abt5_projects/Sex_biased_genes_Phaeophyceae/data/RNA_reads/) || exit 1
+input_dir="/ebio/abt5_projects/Sex_biased_genes_Phaeophyceae/data/RNA_reads/"
 conda activate qcontrol_venv
 
-fastqc $input_dir/Dictyota-dichotoma_FEMALE_RNAseq_Replicat1_RunA_R1.fq.gz
+for f in $input_dir/*.fq.gz
+do
+fastqc $f
+done
+
