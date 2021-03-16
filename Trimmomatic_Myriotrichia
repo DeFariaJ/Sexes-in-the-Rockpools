@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Reserve 8 CPUs for this job
+#$ -pe parallel 4
+# Request 8G of RAM
+#$ -l h_vmem=8G
+# The path used for the standard output stream of the job
+#$ -o /ebio/abt5_projects/Sex_biased_genes_Phaeophyceae/data/
+# Merge stdout and stderr. The job will create only one output file which
+# contains both the real output and the error messages.
+#$ -j y
+# Use /bin/bash to execute this script
+#$ -S /bin/bash
+#Run job from current working directory
+#$ -cwd
+# Send email when the job begins, ends, aborts, or is suspended
+#$ -m beas
+
+conda activate qcontrol_venv
+
+input_dir="/ebio/abt5_projects/Sex_biased_genes_Phaeophyceae/data/Myriotrichia/RNAseq/"
+PREFIX="Myriotrichia-clavaeformis_FEMALE_RNAseq_Replicat1"
+
+trimmomatic PE $input_dir/${PREFIX}_R1.fq.gz $input_dir/${PREFIX}_R2.fq.gz ${PREFIX}_forward_paired.fq.gz ${PREFIX}_forward_unpaired.fq.gz ${PREFIX}_reverse_paired.fq.gz ${PREFIX}_reverse_unpaired.fq.gz  ILLUMINACLIP:contaminants.fa:2:30:10 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:50 HEADCROP:15
+
+PREFIX="Myriotrichia-clavaeformis_FEMALE_RNAseq_Replicat2"
+
+trimmomatic PE $input_dir/${PREFIX}_R1.fq.gz $input_dir/${PREFIX}_R2.fq.gz ${PREFIX}_forward_paired.fq.gz ${PREFIX}_forward_unpaired.fq.gz ${PREFIX}_reverse_paired.fq.gz ${PREFIX}_reverse_unpaired.fq.gz  ILLUMINACLIP:contaminants.fa:2:30:10 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:50 HEADCROP:15
+
+PREFIX="Myriotrichia-clavaeformis_FEMALE_RNAseq_Replicat3"
+
+trimmomatic PE $input_dir/${PREFIX}_R1.fq.gz $input_dir/${PREFIX}_R2.fq.gz ${PREFIX}_forward_paired.fq.gz ${PREFIX}_forward_unpaired.fq.gz ${PREFIX}_reverse_paired.fq.gz ${PREFIX}_reverse_unpaired.fq.gz  ILLUMINACLIP:contaminants.fa:2:30:10 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:50 HEADCROP:15
