@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Reserve 8 CPUs for this job
 #$ -pe parallel 6
