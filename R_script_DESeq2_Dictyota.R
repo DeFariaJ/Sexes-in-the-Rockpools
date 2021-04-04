@@ -1,5 +1,7 @@
 #packages
 library(DESeq2)
+library(ggplot2)
+library(pvclust)
 
 #importing data
 fc_Dictyo <- read.table("DictyoOutput.Rmatrix.tab", header = TRUE)
@@ -39,7 +41,8 @@ plotPCA(vst_data, intgroup = "Sex")
 
 #HCA
 vst_clust = dist(t(assay(vst_data)))
-plot(hclust(vst_clust))
+plot(pvclust(vst_clust))
+
 
 ##### Under the wood DESeq2 does 3 things ##########
 
@@ -52,7 +55,7 @@ plot(hclust(vst_clust))
 
 
 #estimate dispersions (step2) 
-deseq_dataset <- estimateDispersions(deseq_dataset) #applies baysian shrinkage etc
+deseq_dataset <- estimateDispersions(deseq_dataset) #applies bayesian shrinkage etc
 #visualize results
 plotDispEsts(deseq_dataset)
 
@@ -72,15 +75,17 @@ summary(result_table)
 #putting results table into a nice data.frame
 results_df <- as.data.frame(result_table)
 
-
 #######FILTERING################
 
+#testing filtering with Aga's script
 b = subset(results_df, padj<.05 & abs(log2FoldChange)>1)#select the desired p value and FC
 
 
 ## Filter rows (genes) with all columns == NA
 complete.cases(results_df) #complete.cases returns TRUE for columns data have all data (no NAs)
 filter_df1 <- results_df[complete.cases(results_df),]
+
+#pvclust was here
 
 # adj p-value <0.05
 filter_df1$padj <0.05
@@ -89,9 +94,6 @@ filter_df2 <- filter_df1[filter_df1$padj <0.05,]
 #p-value <0.05 is not enough, we also want to have a large effect size
 #log2FoldChange >= 1 <= -1, we will filter it on magnitude and not sign, regardless of direction
 abs(filter_df2$log2FoldChange) > 1
- 
- 
- 
 filter_df3 <- filter_df2[abs(filter_df2$log2FoldChange) > 1,]
 
 
@@ -99,32 +101,24 @@ filter_df3 <- filter_df2[abs(filter_df2$log2FoldChange) > 1,]
 ####################### VISULALISATION ################################
 
 #MA plot
-
-plotMA(result_table) #takes as input original table produced by DESeq2 (not data.frame) #CAN CHANGE TO 0.05
+plotMA(result_table, alpha = 0.05) #takes as input original table produced by DESeq2 (not data.frame) #CAN CHANGE TO 0.05
 # the aim here is to produce a comparison of the mean normalized counts (baseMean) and fold change
-#adjusted p-value here is <0.1 and I am not sure how to change this
-#so a lot of the blue dots are not significant 
-# still, the higher the mean counts increases the more likely we are to get DGE genes
-# nothing unusual about the data which is good
 
 
 ######## VOLCANO PLOT ############
 #for all the genes we have analysied, we need the fold change and the adj p-value
 
-#creating a new column on filter_table_df1 which satisfies both conditions 
-filter_df1$test <- abs(filter_df1$log2FoldChange) > 1 & filter_df1$padj <0.05
+#creating a new column on filter_df1 (up, neutra, down)
+filter_df1$DiffExpressed <-"Neutral"
+filter_df1$DiffExpressed[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >1] <- "DEGs"
+filter_df1$DiffExpressed[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >2] <- "DEGs+"
+filter_df1$DiffExpressed[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >4] <- "DEGs++"                                                
+                                                 
 
-g <- ggplot(filter_df1, aes(x=log2FoldChange, y= -log10(padj))) +
-         geom_point(aes(colour=test), size=1, alpha=0.3) +
-         scale_colour_manual(values = c("black", "red")) +
-         geom_vline(xintercept = 1, colour= "black", linetype=2) + 
-         geom_vline(xintercept = -1, colour="black", linetype=2) +
-         geom_hline(yintercept = -log10(0.05), colour = "black", linetype = 2) 
-         
-ggplotly(g) #assign the plot above to g and make an interactive plot
-        
-         
-with(results_df, plot(log2FoldChange, -log10(pvalue), pch=20, main="Dictyota Female vs Male GA"))
-with(subset(results_df, padj<.05 & abs(log2FoldChange)>1), points(log2FoldChange, -log10(pvalue), pch=20, col="grey"))
-with(subset(results_df, padj<.05 & abs(log2FoldChange)>2), points(log2FoldChange, -log10(pvalue), pch=20, col="orange"))
-with(subset(results_df, padj<.05 & abs(log2FoldChange)>4), points(log2FoldChange, -log10(pvalue), pch=20, col="darkgreen"))
+#Plot plot
+ggplot(filter_df1, aes(x=log2FoldChange, y= -log10(padj))) +
+         geom_point(aes(colour = DiffExpressed)) +
+         geom_vline(xintercept = 1, linetype = 3) + 
+         geom_vline(xintercept = -1, linetype = 3) +
+         geom_hline(yintercept = -log10(0.05), linetype = 3) +
+         ylim(-5, 125)
