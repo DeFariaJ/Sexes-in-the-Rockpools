@@ -37,7 +37,7 @@ rownames(metaData_df) <- metaData_df$first_column
 metaData_df[,1] <- NULL
 
 #getting main DESeq2 object
-deseq_dataset = DESeqDataSetFromMatrix(countData = fc_Dictyo, colData = metaData_df, design = ~ Sex )
+deseq_dataset = DESeqDataSetFromMatrix(countData = fc_Dictyo, colData = metaData_df, design = ~ Sex)
 
 #prep steps for deseq2
 deseq_dataset = estimateSizeFactors(deseq_dataset)
@@ -128,10 +128,10 @@ plotMA(result_table, alpha = 0.05) #takes as input original table produced by DE
 #for all the genes we have analysied, we need the fold change and the adj p-value
 
 #creating a new column on filter_df1 (up, neutra, down)
-filter_df1$DiffExpressed <-"Neutral"
-filter_df1$DiffExpressed[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >1] <- "DEGs"
-filter_df1$DiffExpressed[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >2] <- "DEGs+"
-filter_df1$DiffExpressed[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >4] <- "DEGs++"                                                
+filter_df1$DiffExpressed <-"Unbiased"
+filter_df1$DiffExpressed[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >1] <- "FC >2"
+filter_df1$DiffExpressed[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >2] <- "FC >4"
+filter_df1$DiffExpressed[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >4] <- "FC >16"                                                
                                                  
 
 #Plot plot
@@ -141,6 +141,114 @@ ggplot(filter_df1, aes(x=log2FoldChange, y= -log10(padj))) +
          geom_vline(xintercept = -1, linetype = 3) +
          geom_hline(yintercept = -log10(0.05), linetype = 3) +
          ylim(-5, 150)
+
+######## ************* TPM *************** ##############
+
+#importing data
+fc_DictyoTPM <- read.table("/Users/goncaloleiria/Desktop/Sex_biased_GeneExpression/Sexes_in_the_Rockpools/Dictyo_featureMatrixTPM.txt", header = TRUE)
+
+#genes as rows
+rownames(fc_DictyoTPM) <- fc_DictyoTPM[,1]
+fc_DictyoTPM[,1] <- NULL
+
+#columns names a bit more handy
+names(fc_DictyoTPM)[2] <- "Female_1"
+names(fc_DictyoTPM)[3] <- "Female_2"
+names(fc_DictyoTPM)[4] <- "Female_3"
+names(fc_DictyoTPM)[5] <- "Male_1"
+names(fc_DictyoTPM)[6] <- "Male_2"
+names(fc_DictyoTPM)[7] <- "Male_3"
+
+fc_DictyoTPM$LengthKB <- fc_DictyoTPM$Length/1000
+
+# Step 1 - Normalize for gene length
+#Divide each gene count by gene legth (I am adding results as new variables in the sabe df(not very sof))
+fc_DictyoTPM$F1<- fc_DictyoTPM[,"Female_1"]/fc_DictyoTPM[,"LengthKB"]
+fc_DictyoTPM$F2<- fc_DictyoTPM[,"Female_2"]/fc_DictyoTPM[,"LengthKB"]
+fc_DictyoTPM$F3<- fc_DictyoTPM[,"Female_3"]/fc_DictyoTPM[,"LengthKB"]
+fc_DictyoTPM$M1<- fc_DictyoTPM[,"Male_1"]/fc_DictyoTPM[,"LengthKB"]
+fc_DictyoTPM$M2<- fc_DictyoTPM[,"Male_2"]/fc_DictyoTPM[,"LengthKB"]
+fc_DictyoTPM$M3<- fc_DictyoTPM[,"Male_3"]/fc_DictyoTPM[,"LengthKB"]
+#put results in a new df 
+fc_DictyoTPM_1 <- fc_DictyoTPM[, c(1, 8:13)]
+
+#Step 2 - Normalize for sequence depth
+# 2.1 - Add up read counts for each sample and divide by 1 million
+F1_sc <- sum(fc_DictyoTPM_1$F1/1000000)
+F2_sc <- sum(fc_DictyoTPM_1$F2/1000000)
+F3_sc <- sum(fc_DictyoTPM_1$F3/1000000)
+M1_sc <- sum(fc_DictyoTPM_1$M1/1000000)
+M2_sc <- sum(fc_DictyoTPM_1$M2/1000000)
+M3_sc <- sum(fc_DictyoTPM_1$M3/1000000)
+
+# 2.2 - normalized gene counts / new scalling factor
+fc_DictyoTPM_1$Female_1 <- fc_DictyoTPM_1[,"F1"]/F1_sc
+fc_DictyoTPM_1$Female_2 <- fc_DictyoTPM_1[,"F2"]/F2_sc
+fc_DictyoTPM_1$Female_3 <- fc_DictyoTPM_1[,"F3"]/F3_sc
+fc_DictyoTPM_1$Male_1 <- fc_DictyoTPM_1[,"M1"]/M1_sc
+fc_DictyoTPM_1$Male_2 <- fc_DictyoTPM_1[,"M2"]/M2_sc
+fc_DictyoTPM_1$Male_3 <- fc_DictyoTPM_1[,"M2"]/M3_sc
+#put final results in a new df
+fc_DictyoTPM_2 <- fc_DictyoTPM_1[, c(1, 8:13)]
+
+###########################################
+### save fc_DictyoTPM_2 like it is here
+###########################################
+
+
+#this creates a new df with genes (rows) which must be present in two dif DFs 
+#fc_DictyoTPM2 and filter_DF3
+(rownames(fc_DictyoTPM_2) %in% rownames(filter_df3)) #logical matrix
+fc_DictyoTPM_DEGs <- fc_DictyoTPM_2[(rownames(fc_DictyoTPM_2) %in% rownames(filter_df3)),] #apply logical filtering
+
+#get rid of length (not needed for heatMap)
+fc_DictyoTPM_DEGs <- subset (fc_DictyoTPM_DEGs, select = -Length)
+
+#log2 +1
+fc_DictyoTPM_DEGsLog <- log2(fc_DictyoTPM_DEGs+1)
+#get matrix for heatMap
+dictyo_heatMatrix <- as.matrix(fc_DictyoTPM_DEGsLog)
+
+#heatMap 1 (2)
+heatmap.2(x=dictyo_heatMatrix, col = brewer.pal(11,"Spectral"), keysize = 1.5, margins = c(7,3), trace = "none", labRow=FALSE)
+
+clr85 <- colorRampPalette(brewer.pal(9,"OrRd"))(100)  
+pheatmap(dictyo_heatMatrix, show_rownames = F, color = clr85, cutree_cols = 2)
+
+#data wrangling for *binary heatmap*
+fc_DictyoTPM_DEGsLog$Females <- rowMeans(fc_DictyoTPM_DEGsLog[,c("Female_1", "Female_2","Female_3")])
+fc_DictyoTPM_DEGsLog$Males <- rowMeans(fc_DictyoTPM_DEGsLog[,c("Male_1", "Male_2","Male_3")])
+#new df
+binary_heatMap <- fc_DictyoTPM_DEGsLog[,c(7,8)]
+# make matrix for heatMap
+binary_heatMapMatrix <- as.matrix(binary_heatMap)
+
+heatmap.2(x=binary_heatMapMatrix, col = brewer.pal(12,"Spectral"),trace = "none", labRow=FALSE, cexCol = 1 )
+
+
+##Getting rid of genes where TPM <1 in both males and females
+#create not-in function
+`%nin%` = Negate(`%in%`)
+#new df based on condition
+new_TPM <- subset(binary_heatMap, binary_heatMap$Females <1 & binary_heatMap$Males <1)
+#get logical
+(rownames(binary_heatMap) %nin% rownames(new_TPM)) 
+#applying logical filtering
+binary_heatMap2 <- binary_heatMap[(rownames(binary_heatMap) %nin% rownames(new_TPM)),] 
+#as matrix 
+binary_heatMapMatrix2 <- as.matrix(binary_heatMap2)
+
+
+
+######### final heat map Male vs Female averages #############
+heatmap.2(x=binary_heatMapMatrix2, col = brewer.pal(9,"RdBu"),trace = "none", labRow=FALSE, cexCol = 1, breaks = c(0,1,1.5,2,2.5,3,3.5,4,4.5,5.5))
+
+#pheatmap
+#pheatmap(binary_heatMapMatrix2, show_rownames = F)
+clr <-colorRampPalette(brewer.pal(9, "OrRd"))(100)  
+pheatmap(binary_heatMapMatrix2, show_rownames = F, color = clr, cutree_cols = 2)
+
+
 
 ################################################################################################################
 ################################################################################################################
@@ -181,9 +289,19 @@ sum(logical_vector, na.rm = TRUE) # best way to count TRUE values
 #####################
 
 #extract row names (genes) from filter_DF1 with FC > 4
-fold_6_genes <- row.names(filter_df1[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >2.585,])
+fold_6_genes <- row.names(filter_df1[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >4,])
 #logical matrix, genes which are both present in Female_up and filter_DF1
 logical_vector <-(rownames(Female_Up) %in% (fold_6_genes))
+#count number of TRUES which (I think, hope, presume) = number of genes FBG FC >4
+sum(logical_vector, na.rm = TRUE) # best way to count TRUE values
+
+######################
+#FC >10
+######################
+#extract row names (genes) from filter_DF1 with FC > 4
+fold_10_genes <- row.names(filter_df1[filter_df1$padj<.05 & abs(filter_df1$log2FoldChange) >3.322,])
+#logical matrix, genes which are both present in Female_up and filter_DF1
+logical_vector <-(rownames(Female_Up) %in% (fold_10_genes))
 #count number of TRUES which (I think, hope, presume) = number of genes FBG FC >4
 sum(logical_vector, na.rm = TRUE) # best way to count TRUE values
 
@@ -215,10 +333,18 @@ logical_vector <-(rownames(Male_Up) %in% (fold_6_genes))
 #count number of TRUES which (I think, hope, presume) = number of genes FBG FC >2
 sum(logical_vector, na.rm = TRUE) # best way to count TRUE values
 
+######################
+#FC >10
+######################
+#logical matrix, genes which are both present in Female_up and filter_DF1
+logical_vector <-(rownames(Male_Up) %in% (fold_10_genes))
+#count number of TRUES which (I think, hope, presume) = number of genes FBG FC >4
+sum(logical_vector, na.rm = TRUE) # best way to count TRUE values
+
 
 #Sanity check
 sanity_check <- row.names(filter_df1[filter_df1$padj>.05 & abs(filter_df1$log2FoldChange) <=1,])
-#### correct!!!! I think....
+#### correct!!!! I think...
 
 ###########################################################################################################
 # FUNCTIONAL ANALYSIS
