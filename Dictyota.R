@@ -6,6 +6,8 @@
 # 5) Performs DGE analysis 
 # 6) Puts the results in nice handy tables
 # 7) Performs visualisation of the results (MA and Volcano plots)
+# 8) Performs TPM calculations
+#9) Performs functional analysis
 
 #packages
 library(DESeq2)
