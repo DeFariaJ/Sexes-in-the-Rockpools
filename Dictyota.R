@@ -1,4 +1,4 @@
-#This script takes the output from featureCounts out of the cave (command line) and:
+#This script takes the output from featureCounts out of the command line and:
 # 1) brings it to R
 # 2) Creates handy data frames
 # 3) Does the data wrangling needed to create an DESeq2 object
