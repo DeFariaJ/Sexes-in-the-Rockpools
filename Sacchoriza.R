@@ -1,3 +1,16 @@
+#This script takes the output from featureCounts out of the command line and:
+# 1) brings it to R
+# 2) Creates handy data frames
+# 3) Does the data wrangling needed to create an DESeq2 object
+# 4) Performs exploratory data analysis (PCA and HCA)
+# 5) Performs DGE analysis 
+# 6) Puts the results in nice handy tables
+# 7) Performs visualisation of the results (MA and Volcano plots)
+# 8) Performs TPM calculations
+#9) Performs functional analysis
+
+
+
 #invitations to the party
 library(DESeq2)
 library(ggplot2)
